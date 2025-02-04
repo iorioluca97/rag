@@ -1,0 +1,14 @@
+venv/
+.idea/
+__pycache__/
+core/__pycache__/
+data/
+extracted_pages/
+chatbot_output/
+agents/
+tmp/
+env
+.env
+*env
+*.env
+*.pdf
