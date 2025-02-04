@@ -1,21 +1,21 @@
 #!/bin/bash
 
-# Verifica che Poetry sia installato
+# Check if poetry is installed
 if ! command -v poetry &> /dev/null
 then
-    echo "Poetry non è installato. Installalo e riprova."
+    echo "Poetry is not installed. Please install poetry first."
     exit 1
 fi
 
-# Installa le dipendenze definite in pyproject.toml
-echo "Installazione delle dipendenze con Poetry..."
+# Install dependencies
+echo "Installing dependencies..."
 poetry install --no-root
 
 if [ $? -ne 0 ]; then
-    echo "Errore durante l'installazione delle dipendenze."
+    echo "Error installing dependencies"
     exit 1
 fi
 
-# Esegui l'app Streamlit
-echo "Avvio di Streamlit con Poetry..."
+# Run Streamlit
+echo "Starting Streamlit..."
 poetry run streamlit run main.py

@@ -1,14 +1,16 @@
-import os
-from dotenv import load_dotenv
-import yaml
-from config.cfg import AGENTS_DIR, MAX_HISTORY_TOKENS, REQUIRED_DIRS
-import re
 import json
 import os
+import re
 from typing import List
+
 import nltk
+import yaml
+from dotenv import load_dotenv
 from nltk.corpus import stopwords
+
+from config.cfg import AGENTS_DIR, MAX_HISTORY_TOKENS, REQUIRED_DIRS
 from config.logger import logger
+
 
 def laod_env():
     load_dotenv()
@@ -17,63 +19,66 @@ def laod_env():
     if os.environ.get("MONGODB_ATLAS_CLUSTER_URI") is None:
         raise ValueError("MONGODB URI NOT FOUND")
 
-    return str(os.environ.get("OPENAI_API_KEY")), str(os.environ.get("MONGODB_ATLAS_CLUSTER_URI"))
-
+    return str(os.environ.get("OPENAI_API_KEY")), str(
+        os.environ.get("MONGODB_ATLAS_CLUSTER_URI")
+    )
 
 
 def process_question(text: str) -> str:
-    nltk.download('stopwords', quiet=True)
-    
+    nltk.download("stopwords", quiet=True)
+
     # Obtain the Italian stopwords
-    stop_words = set(stopwords.words('italian'))
-    
+    stop_words = set(stopwords.words("italian"))
+
     # Convert text to lowercase
     text = text.lower()
-    
+
     # Remove stopwords
     words = [word for word in text.split() if word not in stop_words]
-    
+
     # Remove special characters
     processed_text = " ".join(words)
-    processed_text = re.sub(r'[^a-zA-Z0-9\s]', '', processed_text)
-    
+    processed_text = re.sub(r"[^a-zA-Z0-9\s]", "", processed_text)
+
     return processed_text
-
-
 
 
 def load_service_data(service_dir: str) -> str:
     try:
-        with open(os.path.join(AGENTS_DIR, service_dir + '.yaml'), "r") as file:
-                agent_data = yaml.safe_load(file)
-        return agent_data['prompt']['context']
+        with open(os.path.join(AGENTS_DIR, service_dir + ".yaml"), "r") as file:
+            agent_data = yaml.safe_load(file)
+        return agent_data["prompt"]["context"]
     except Exception as e:
         logger.warning(f"Error loading service data: {e}")
         return "Nessuna informazione disponibile"
 
 
-
 def call_llm_for_question(
-        path: str,
-        question: str, 
-        external_knowledge: str, 
-        client, 
-        model: str = 'gpt-4-turbo', 
-        temperature: float = 0.5,  
-        top_p: float = 0.95, 
-        max_tokens: int = 4000,
-        user_type: str = "PM",
-        history: List[str] = None
-    ):
+    path: str,
+    question: str,
+    external_knowledge: str,
+    client,
+    model: str = "gpt-4-turbo",
+    temperature: float = 0.5,
+    top_p: float = 0.95,
+    max_tokens: int = 4000,
+    user_type: str = "PM",
+    history: List[str] = None,
+):
 
     def get_user_type(user_type):
         if user_type == "PM":
-            return "un Product Manager con poca o nessuna conoscenza tecnica"
+            return "un product manager con poca o nessuna conoscenza tecnica dell'applicazione"
         else:
-            return "un utente tecnico con conoscenze avanzate in ambito informatico"
+            return "un utente tecnico con conoscenze avanzate in ambito informatico e dell'applicazione"
 
-    service_dir = path.split("/")[-1].split(".pdf")[0].lower().replace("/", "_").replace("\\", "_")
-
+    service_dir = (
+        path.split("/")[-1]
+        .split(".pdf")[0]
+        .lower()
+        .replace("/", "_")
+        .replace("\\", "_")
+    )
 
     # print("Message history: ",refactor_history(truncate_history(history, MAX_HISTORY_TOKENS)))
 
@@ -95,12 +100,11 @@ def call_llm_for_question(
 
                 Usa queste informazioni come base per rispondere alle domande dell'utente.
                 Se non hai abbastanza informazioni nella tua knowledge base, utilizza le informazioni fornite dall'utente o comunica chiaramente che non puoi rispondere.
-                """
-                },
-
-                {
-                                "role": "user",
-                                "content": f"""
+                """,
+            },
+            {
+                "role": "user",
+                "content": f"""
                 Data la domanda dell'utente: 
                 {question}
 
@@ -110,10 +114,9 @@ def call_llm_for_question(
                 Date le informazioni estratte dal documento correlato:
                 {external_knowledge}
 
-                Fornisci una risposta dettagliata ma comprensibile per l'utente. Se necessario, includi esempi pratici o spiegazioni semplici per rendere la tua risposta più utile.
-                
+                Fornisci una risposta dettagliata ma comprensibile per l'utente. Se necessario, includi esempi pratici o spiegazioni semplici per rendere la tua risposta più utile.                
                 RISPONDI IN INGLESE.
-                """
+                """,
             },
         ],
         "temperature": temperature,
@@ -121,34 +124,33 @@ def call_llm_for_question(
         "max_tokens": max_tokens,
     }
 
-
     with open("./chatbot_output/payload.json", "w") as file:
         json.dump(payload, file, ensure_ascii=False, indent=4)
 
-    # Richiesta al modello
-    response = client.chat.completions.create(model=model, messages=payload["messages"], max_tokens=max_tokens, stream=True)
+    # Model call
+    response = client.chat.completions.create(
+        model=model, messages=payload["messages"], max_tokens=max_tokens, stream=True
+    )
 
-    # Streaming della risposta
+    # response stream
     for chunk in response:
         if chunk is not None and chunk.choices:
             content = chunk.choices[0].delta.content
             if content is not None:
                 yield content
-    
-
 
 
 def call_llm_for_toc(
-        path: str,
-        client, 
-        model: str = 'gpt-4o', 
-        temperature: float = 0.5,  
-        top_p: float = 0.95, 
-        max_tokens: int = 8000
-    ) -> tuple:
+    path: str,
+    client,
+    model: str = "gpt-4o",
+    temperature: float = 0.5,
+    top_p: float = 0.95,
+    max_tokens: int = 8000,
+) -> tuple:
     """
     Chiamata al modello di linguaggio per estrarre la Table of Contents (ToC).
-    
+
     Args:
         text (str): Il testo estratto dal PDF.
         client: Il client per interagire con il modello di linguaggio.
@@ -158,21 +160,23 @@ def call_llm_for_toc(
         max_tokens (int): Numero massimo di token da generare.
 
     Returns:
-        tuple: Una tupla contenente due liste: 
+        tuple: Una tupla contenente due liste:
             - toc: Lista di dizionari con "title" e "page".
             - pages: Lista delle pagine dove è stata trovata la ToC.
     """
-    service_dir = path.split("/")[-1].split(".pdf")[0].lower().replace("/", "_").replace("\\", "_")
+    service_dir = (
+        path.split("/")[-1]
+        .split(".pdf")[0]
+        .lower()
+        .replace("/", "_")
+        .replace("\\", "_")
+    )
     text = get_first_pages_text(service_dir)
 
-
-    # Costruzione del payload per la richiesta
+    # Payload
     payload = {
         "messages": [
-            {
-                "role": "system",
-                "content": "Sei un AI esperto in analisi di documenti."
-            },
+            {"role": "system", "content": "Sei un AI esperto in analisi di documenti."},
             {
                 "role": "user",
                 "content": (
@@ -195,22 +199,20 @@ def call_llm_for_toc(
                     Di seguito il testo estratto:
                     {text}
                     """
-                )
-            }
+                ),
+            },
         ],
         "temperature": temperature,
         "top_p": top_p,
-        "max_tokens": max_tokens
+        "max_tokens": max_tokens,
     }
 
-    
     logger.debug("Payload: {}".format(payload))
-    response = client.chat.completions.create(model=model, messages=payload["messages"], max_tokens=max_tokens)
+    response = client.chat.completions.create(
+        model=model, messages=payload["messages"], max_tokens=max_tokens
+    )
 
     return validate_answer(response.choices[0].message.content)
-
-
-
 
 
 def refactor_history(history):
@@ -219,15 +221,18 @@ def refactor_history(history):
         return str_history
     else:
         for elem in history:
-            str_history += elem.get('role', '').upper() + ": " + elem.get('content', '') + "\n"
-        return str_history            
+            str_history += (
+                elem.get("role", "").upper() + ": " + elem.get("content", "") + "\n"
+            )
+        return str_history
+
 
 def truncate_history(history, max_tokens):
-    # Calcola la lunghezza e taglia i messaggi più vecchi
+    # Calculate the number of tokens in the history
     current_tokens = 0
     truncated_history = []
     for msg in reversed(history):
-        msg_tokens = len(msg['content'].split())  # Stima dei token
+        msg_tokens = len(msg["content"].split())  # Tokenize the message
         if current_tokens + msg_tokens > max_tokens:
             break
         truncated_history.insert(0, msg)
@@ -235,30 +240,36 @@ def truncate_history(history, max_tokens):
     return truncated_history
 
 
-
 def get_first_pages_text(service_dir: str) -> str:
-    full_text = ""  
+    full_text = ""
     for page in range(1, 6):
-        with open(f"extracted_pages/{service_dir}/page_{page}.txt", "r", encoding="utf-8") as file:
+        with open(
+            f"extracted_pages/{service_dir}/page_{page}.txt", "r", encoding="utf-8"
+        ) as file:
             data = file.read()
             full_text += "\n PAGE NUMBER " + str(page) + "\n" + data
     return full_text
 
+
 def validate_answer(res: dict) -> tuple:
-    if 'json' in res[:10] or 'python' in res[:10] or 'dict' in res[:10]:
-        cleaned = res.replace('json', '').replace('python', '').strip().replace("```", "")
+    if "json" in res[:10] or "python" in res[:10] or "dict" in res[:10]:
+        cleaned = (
+            res.replace("json", "").replace("python", "").strip().replace("```", "")
+        )
     _ = json.loads(cleaned)
 
     # Get the pages
     try:
         pages = list(_.keys())[0].split(",")
-    except:
+    except Exception as e:
         pages = []
+        logger.error(f"Error getting the pages: {e}")
     # Get the ToC
     try:
         toc = _[list(_.keys())[0]]
-    except:
+    except Exception as e:
         toc = []
+        logger.error(f"Error getting the ToC: {e}")
 
     return toc, pages
 
