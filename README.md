@@ -1,25 +1,31 @@
-# Project Name
-
+# PDF Analysis and RAG Chatbot
 ## Description
-A brief description of what this project does and who it's for.
+This project implements a Retrieval-Augmented Generation (RAG) system using Streamlit, designed to analyze PDF documents and enable intelligent conversations about their content. The application extracts Table of Contents and key terms from PDF files, stores them in a vector database, and allows users to interact with the content through an LLM-powered chatbot.
+
+## Key Features
+- PDF document analysis and metadata extraction
+- Automatic Table of Contents generation
+- Key terms identification and extraction
+- Vector database storage for efficient retrieval
+- LLM-powered conversational interface
+- Relevance scoring for answers
+- User feedback system for responses
 
 ## Installation
-Instructions on how to install and set up the project.
-
 ```bash
 # Clone the repository
-git clone https://github.com/iorioluca97/poc_backup.git
+git clone https://github.com/iorioluca97/rag.git
 
 # Navigate to the project directory
-cd yourproject
+cd rag
 
-# Install dependencies with poetry or by creating a virtual env with python
+# Option 1: Install with Poetry (recommended)
 sh start_poetry.sh
 
-# OR
-```bash
+# Option 2: Install with Virtual Environment
 python -m venv venv
 
+# Activate the virtual environment
 # On Windows
 venv\Scripts\activate
 # On Unix or MacOS
@@ -28,28 +34,27 @@ source venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 ```
-```
 
 ## Usage
-Instructions on how to use the project.
-In order to use the chatbot you have to feed a pdf file in the upload container on the top-right of the application. 
-The pdf will be extracted and its metadata will be stored in a mongodb collection, in the meanwhile you will able to see on the left side the Table of Contents extracted.
+1. Launch the Streamlit application (command will be shown after installation)
+2. Upload your PDF file using the upload container in the top-right
+3. The system will automatically:
+   - Extract and display the Table of Contents in the left sidebar
+   - Process and store document metadata in the vector database
+   - Display any available FAQs for the document
 
-If there are FAQs available for this document they will be shown in the left sidebar, under the section "FAQ".
-
-At this point you can start a conversation, and the llm will answer by its knowledge plus the document knowledge fecthed in the vector db. 
-
-Each answer will make appear the vector scores related to the page retrieved, and a feedback section where the user can rank in a scale from 1 to 3 the llm answer.
-
-```bash
-# Run the project
-npm start
-```
+4. Start a conversation with the chatbot:
+   - Ask questions about the document content
+   - View relevance scores for each response
+   - Provide feedback on answer quality (scale 1-3)
+   - See source page references for answers
 
 ## Contributing
-Guidelines for contributing to the project.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-# MIT License
+## License
+MIT License
+
 Copyright (c) bunhere.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -58,8 +63,10 @@ in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
+
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -69,4 +76,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ## Contact
-Contact information for the project maintainer.
+For questions and support, please contact the project maintainers at [Add contact information]
+
+Would you like me to make any additional adjustments to better reflect specific aspects of your project?
