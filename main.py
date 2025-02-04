@@ -2,12 +2,14 @@ from core.text_extractor import TextExtractor
 import streamlit as st
 from config.cfg import FAQ
 from config.logger import logger
-
+from dotenv import load_dotenv
+import os
 from core.util_functions import (
     process_question,
     laod_env, 
     call_llm_for_question,
     call_llm_for_toc,
+    create_required_folders
 )
 from core.database import MongoDb
 import os
@@ -15,12 +17,13 @@ import json
 import openai
 
 
+create_required_folders()
 
-laod_env()
+OPENAI_API_KEY, MONGODB_ATLAS_CLUSTER_URI = laod_env()
 
 # CREATE CLIENT
 client = openai.Client()
-
+db = MongoDb(MONGODB_ATLAS_CLUSTER_URI)
 
 # Inizializza lo stato della sessione
 def initialize_session_state():
@@ -60,26 +63,22 @@ def process_pdf():
 
 @st.cache_data
 def save_vectors():
-    
-    # Set up MongoDB with the collection name
-    db = MongoDb(collection_name=st.session_state.collection_name)
-    logger.info(f"Collection in use: {st.session_state.collection_name}.")
-    st.session_state.db = db
-
     # Check if the collection exists
     if not db.collection_exists(collection_name=st.session_state.collection_name):
         logger.info(f"Collection {st.session_state.collection_name} does not exist. Creating it...")
         db.process_and_store_pages(path=st.session_state.local_file_path, keywords=st.session_state.keywords)
 
+    else:
+        # Set up MongoDB with the collection name
+        db.change_collection(collection_name=st.session_state.collection_name)
+        logger.info(f"Collection in use: {st.session_state.collection_name}.")
+        st.session_state.db = db
+
 
 def query_db(user_question):
-    if "db" not in st.session_state:
-        logger.info("Database not found. Creating a new instance...")
-        db = MongoDb(collection_name=st.session_state.collection_name)
-        st.session_state.db = db
-    else:
-        logger.info("Database found. Using the existing instance...")
-        db = st.session_state.db
+    logger.info("Database not found. Creating a new instance...")
+    db.change_collection(collection_name=st.session_state.collection_name)
+    st.session_state.db = db
 
     return db.query_with_keyword_filter(
         query_text=process_question(text=user_question),
@@ -93,7 +92,6 @@ def create_sidebar_configuration():
         with st.expander("📄 File", expanded=True):
             uploaded_file = st.file_uploader("", type="pdf")
             if uploaded_file:
-
                 os.makedirs("./tmp/", exist_ok=True)
                 file_path = f"./tmp/{uploaded_file.name}"
                 with open(file_path, "wb") as f:
@@ -363,7 +361,7 @@ def main():
 
         with st.spinner("Salvataggio delle parole chiave nel database..."):
             save_vectors()
-            db = MongoDb(collection_name=st.session_state.collection_name)
+            db.change_collection(collection_name=st.session_state.collection_name)
             st.session_state.db = db
             
             

@@ -39,3 +39,9 @@ DEFAULT_KEYWORDS_TO_IGNORE = [
     "[float]",
     "[list]",
 ]
+
+REQUIRED_DIRS = [
+    'chatbot_output',
+    'tmp',
+    'extracted_pages',
+]

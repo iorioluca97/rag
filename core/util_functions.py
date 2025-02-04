@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 import yaml
-from config.cfg import AGENTS_DIR, MAX_HISTORY_TOKENS
+from config.cfg import AGENTS_DIR, MAX_HISTORY_TOKENS, REQUIRED_DIRS
 import re
 import json
 import os
@@ -16,6 +16,8 @@ def laod_env():
         raise ValueError("API KEY NOT FOUND")
     if os.environ.get("MONGODB_ATLAS_CLUSTER_URI") is None:
         raise ValueError("MONGODB URI NOT FOUND")
+
+    return str(os.environ.get("OPENAI_API_KEY")), str(os.environ.get("MONGODB_ATLAS_CLUSTER_URI"))
 
 
 
@@ -260,3 +262,9 @@ def validate_answer(res: dict) -> tuple:
 
     return toc, pages
 
+
+def create_required_folders():
+    dirs = os.listdir()
+    for dir in REQUIRED_DIRS:
+        if dir not in dirs:
+            os.makedirs(dir)

@@ -6,8 +6,6 @@ import os
 import numpy as np
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
-# from langchain.embeddings import OpenAIEmbeddings
-# from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_openai import OpenAIEmbeddings
 from dotenv import load_dotenv
 from config.logger import logger
@@ -22,12 +20,15 @@ class MongoDb:
                  collection_name: str = "mycollection",
                  recreate_collection: bool = False
                  ):
-        if not uri:
+
+        self.uri = uri
+        if not self.uri:
             raise ValueError("MongoDB URI is not set in environment variables")
-        self.client = MongoClient(uri, server_api=ServerApi('1'))
+
+        self.client = MongoClient(self.uri, server_api=ServerApi('1'))
         self.embedding_model = OpenAIEmbeddings()
 
-        self.ping()
+        # self.ping()
 
         self.database_name = self.client[database_name]
 
