@@ -35,6 +35,13 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+## Installation with Docker
+```bash
+docker build -t rag .
+
+docker run -p 8501:8501 rag
+```
+
 ## Usage
 1. Launch the Streamlit application (command will be shown after installation)
 2. Upload your PDF file using the upload container in the top-right
