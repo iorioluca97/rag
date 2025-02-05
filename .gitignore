@@ -5,7 +5,7 @@ core/__pycache__/
 data/
 extracted_pages/
 chatbot_output/
-agents/
+service_knowledge/
 tmp/
 env
 .env

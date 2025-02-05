@@ -12,7 +12,7 @@ FAQ = {
 }
 
 # AGENTS DIRECTORY
-AGENTS_DIR = "agents"
+AGENTS_DIR = "service_knowledge"
 
 # MAXIMUM NUMBER OF HISTORY TOKENS
 MAX_HISTORY_TOKENS = 2000
@@ -51,7 +51,7 @@ DEFAULT_KEYWORDS_TO_IGNORE = [
 ]
 
 REQUIRED_DIRS = [
-    "agents",
+    "service_knowledge",
     "chatbot_output",
     "tmp",
     "extracted_pages",

@@ -118,12 +118,12 @@ def create_sidebar_configuration():
 
 
             # New YAML Upload Section
-        with st.expander("🤖 Agents", expanded=True):
-            # Create agents directory if it doesn't exist
-            os.makedirs("./agents/", exist_ok=True)
+        with st.expander("🤖 Service Knowledge", expanded=True):
+            # Create service_knowledge directory if it doesn't exist
+            os.makedirs("./service_knowledge/", exist_ok=True)
 
             # YAML file uploader
-            uploaded_yaml = st.file_uploader("Upload Agent YAML", type="yaml")
+            uploaded_yaml = st.file_uploader("Upload Service YAML", type="yaml")
             if uploaded_yaml:
                 try:
                     # Validate YAML file
@@ -135,8 +135,8 @@ def create_sidebar_configuration():
                     else:
                         yaml_filename = uploaded_yaml.name
 
-                    # Save YAML file to agents directory
-                    yaml_path = os.path.join("./agents/", yaml_filename)
+                    # Save YAML file to service_knowledge directory
+                    yaml_path = os.path.join("./service_knowledge/", yaml_filename)
                     with open(yaml_path, "wb") as f:
                         f.write(uploaded_yaml.getbuffer())
                     
