@@ -2,6 +2,7 @@ import json
 import os
 
 import openai
+import yaml
 import streamlit as st
 
 from config.cfg import FAQ
@@ -114,6 +115,35 @@ def create_sidebar_configuration():
                     .replace(".pdf", "")
                 )
                 st.session_state.collection_name = collection_name
+
+
+            # New YAML Upload Section
+        with st.expander("🤖 Agents", expanded=True):
+            # Create agents directory if it doesn't exist
+            os.makedirs("./agents/", exist_ok=True)
+
+            # YAML file uploader
+            uploaded_yaml = st.file_uploader("Upload Agent YAML", type="yaml")
+            if uploaded_yaml:
+                try:
+                    # Validate YAML file
+                    yaml_content = yaml.safe_load(uploaded_yaml)
+                    
+                    # Generate filename based on current collection name or use uploaded filename
+                    if st.session_state.get('collection_name'):
+                        yaml_filename = f"{st.session_state.collection_name}.yaml"
+                    else:
+                        yaml_filename = uploaded_yaml.name
+
+                    # Save YAML file to agents directory
+                    yaml_path = os.path.join("./agents/", yaml_filename)
+                    with open(yaml_path, "wb") as f:
+                        f.write(uploaded_yaml.getbuffer())
+                    
+                    st.success(f"🤖 Agent YAML {yaml_filename} uploaded!")
+                except yaml.YAMLError:
+                    st.error("Invalid YAML file. Please check the file format.")
+
 
         # RENDERING PDF MOLTO PESANTE
         # if uploaded_file:

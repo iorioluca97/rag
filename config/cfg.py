@@ -51,6 +51,7 @@ DEFAULT_KEYWORDS_TO_IGNORE = [
 ]
 
 REQUIRED_DIRS = [
+    "agents",
     "chatbot_output",
     "tmp",
     "extracted_pages",
