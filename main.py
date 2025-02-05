@@ -141,7 +141,9 @@ def create_sidebar_configuration():
                         f.write(uploaded_yaml.getbuffer())
                     
                     st.success(f"🤖 Agent YAML {yaml_filename} uploaded!")
+                    logger.info(f"🤖 Agent YAML {yaml_filename} uploaded!")
                 except yaml.YAMLError:
+                    logger.error("Invalid YAML file. Please check the file format.")
                     st.error("Invalid YAML file. Please check the file format.")
 
 
