@@ -19,11 +19,7 @@ from core.util_functions import (
 
 create_required_folders()
 
-OPENAI_API_KEY, MONGODB_ATLAS_CLUSTER_URI = laod_env()
 
-# CREATE CLIENT
-client = openai.Client()
-db = MongoDb(MONGODB_ATLAS_CLUSTER_URI)
 
 
 # Inizialize the session state
@@ -50,7 +46,7 @@ def initialize_session_state():
 
 # Cache the extracted text, TOC, and keywords
 @st.cache_data
-def process_pdf():
+def process_pdf(_client):
     text_extract = TextExtractor(path=st.session_state.local_file_path)
     full_text = text_extract.extract_full_text()
     logger.info("Extracting TOC and keywords manually...")
@@ -59,7 +55,7 @@ def process_pdf():
     if len(pages) == 0 or len(toc) == 0:
         logger.info("TOC not found. Using LLM to generate TOC...")
         toc, pages = call_llm_for_toc(
-            path=st.session_state.local_file_path, client=client
+            path=st.session_state.local_file_path, client=_client
         )
 
     keywords = text_extract.extract_keywords(pages=pages)
@@ -67,24 +63,24 @@ def process_pdf():
 
 
 @st.cache_data
-def save_vectors():
+def save_vectors(_db):
     # Check if the collection exists
-    if not db.collection_exists(collection_name=st.session_state.collection_name):
+    if not _db.collection_exists(collection_name=st.session_state.collection_name):
         logger.info(
             f"Collection {st.session_state.collection_name} does not exist. Creating it..."
         )
-        db.process_and_store_pages(
+        _db.process_and_store_pages(
             path=st.session_state.local_file_path, keywords=st.session_state.keywords
         )
 
     else:
         # Set up MongoDB with the collection name
-        db.change_collection(collection_name=st.session_state.collection_name)
+        _db.change_collection(collection_name=st.session_state.collection_name)
         logger.info(f"Collection in use: {st.session_state.collection_name}.")
-        st.session_state.db = db
+        st.session_state.db = _db
 
 
-def query_db(user_question):
+def query_db(user_question, db):
     logger.info("Database not found. Creating a new instance...")
     db.change_collection(collection_name=st.session_state.collection_name)
     st.session_state.db = db
@@ -96,7 +92,7 @@ def query_db(user_question):
     )
 
 
-def create_sidebar_configuration():
+def create_sidebar_configuration(db, client):
     # File Upload Section
     with st.sidebar:
         with st.expander("📄 File", expanded=True):
@@ -200,10 +196,10 @@ def create_sidebar_configuration():
                 step=256,
             )
 
-    create_faq_section()
+    create_faq_section(db=db, client=client)
 
 
-def create_faq_section():
+def create_faq_section(db, client):
     if st.session_state.get("collection_name") in FAQ:
         with st.sidebar.expander("❓ FAQ", expanded=True):
             st.markdown(f"### {st.session_state.collection_name}")
@@ -222,7 +218,7 @@ def create_faq_section():
                         {"role": "user", "content": question}
                     )
                     # Get response
-                    results = query_db(question)
+                    results = query_db(question, db)
                     display_vector_results(results, question)
 
                     message_history = st.session_state.messages.copy()
@@ -356,7 +352,7 @@ def display_vector_results(results: list, question: str):
                 )
 
 
-def display_chat():
+def display_chat(db, client):
     if "collection_name" not in st.session_state:
         st.warning("⚠️ Upload a PDF file to start the conversation.")
         return
@@ -382,7 +378,7 @@ def display_chat():
 
             # Process response
             with st.spinner("Analizying the question..."):
-                results = query_db(question)
+                results = query_db(question, db)
                 # Display vector search results in sidebar
                 display_vector_results(results, question)
 
@@ -415,20 +411,25 @@ def main():
     st.set_page_config(page_title="Streamlit RAG Chatbot", layout="wide")
     st.title("Streamlit RAG - Chatbot")
 
+    OPENAI_API_KEY, MONGODB_ATLAS_CLUSTER_URI = laod_env()
+    # CREATE CLIENT
+    client = openai.Client()
+    db = MongoDb(MONGODB_ATLAS_CLUSTER_URI)
+
     # Create sidebar
-    create_sidebar_configuration()
+    create_sidebar_configuration(db=db, client=client)
 
     # Handle file processing
     if st.session_state.local_file_path:
 
         with st.spinner("Generating TOC and keywords..."):
-            toc, full_text, keywords = process_pdf()
+            toc, full_text, keywords = process_pdf(_client=client)
             st.session_state.toc = toc
             st.session_state.full_text = full_text
             st.session_state.keywords = keywords
 
         with st.spinner("Saving vectors to the database..."):
-            save_vectors()
+            save_vectors(_db=db)
             db.change_collection(collection_name=st.session_state.collection_name)
             st.session_state.db = db
 
@@ -441,7 +442,7 @@ def main():
             )
             st.markdown(f"### {st.session_state.collection_name}\n{formatted_toc}")
 
-    display_chat()
+    display_chat(db=db, client=client)
 
     display_feedback_section()
 
