@@ -13,17 +13,18 @@ from core.util_functions import (
     call_llm_for_question,
     call_llm_for_toc,
     create_required_folders,
-    laod_env,
+    load_env,
     process_question,
 )
+from dotenv import load_dotenv
 
 create_required_folders()
 
 
-
-
-# Inizialize the session state
+# Inizializza lo stato della sessione
 def initialize_session_state():
+    if "env_loaded" not in st.session_state:
+        st.session_state.env_loaded = False
     if "local_file_path" not in st.session_state:
         st.session_state.local_file_path = None
     if "messages" not in st.session_state:
@@ -42,6 +43,24 @@ def initialize_session_state():
         st.session_state.user_type = "PM"
     if "message_ratings" not in st.session_state:
         st.session_state.message_ratings = {}
+
+
+# Funzione per caricare il file .env
+def load_env_file():
+    st.title("🔑 Carica il tuo file .env")
+    uploaded_env = st.file_uploader("Seleziona un file .env", type=["env"])
+
+    if uploaded_env:
+        # Save .env
+        with open(".env", "wb") as f:
+            f.write(uploaded_env.getbuffer())
+
+        load_dotenv(".env")
+
+        # Update session state
+        st.session_state.env_loaded = True
+        logger.info("Env file loaded successfully.")
+        st.rerun()
 
 
 # Cache the extracted text, TOC, and keywords
@@ -407,12 +426,26 @@ def display_chat(db, client):
 
 
 def main():
-    initialize_session_state()
     st.set_page_config(page_title="Streamlit RAG Chatbot", layout="wide")
+
+    # Inizializza lo stato della sessione
+    initialize_session_state()
+
+    # Search the env file
+    if os.path.exists(".env"):
+        st.session_state.env_loaded = True
+        logger.info("Env file found.")
+
+    if not st.session_state.env_loaded:
+        logger.warning("Env file not found.")
+        load_env_file()
+        return  # Stop main()
+
     st.title("Streamlit RAG - Chatbot")
 
-    OPENAI_API_KEY, MONGODB_ATLAS_CLUSTER_URI = laod_env()
-    # CREATE CLIENT
+    OPENAI_API_KEY, MONGODB_ATLAS_CLUSTER_URI = load_env()
+
+    # Create client and database instances
     client = openai.Client()
     db = MongoDb(MONGODB_ATLAS_CLUSTER_URI)
 

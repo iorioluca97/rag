@@ -12,7 +12,7 @@ from config.cfg import AGENTS_DIR, MAX_HISTORY_TOKENS, REQUIRED_DIRS
 from config.logger import logger
 
 
-def laod_env():
+def load_env():
     load_dotenv()
     if os.environ.get("OPENAI_API_KEY") is None:
         raise ValueError("API KEY NOT FOUND")
